@@ -1,0 +1,14 @@
+{
+  "target": "Survived",
+  "final_features": [
+    "Sex",
+    "AgeGroup_median",
+    "Fare_log",
+    "Pclass",
+    "FamilySize_cluster",
+    "Title_transformed",
+    "Has_Cabin_Number"
+  ],
+  "metric": "roc_auc",
+  "random_state": 42
+}

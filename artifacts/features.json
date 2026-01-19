@@ -7,7 +7,8 @@
     "Pclass",
     "FamilySize_cluster",
     "Title_transformed",
-    "Has_Cabin_Number"
+    "Has_Cabin_Number",
+    "Survived"
   ],
   "metric": "roc_auc",
   "random_state": 42

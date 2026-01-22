@@ -9,3 +9,4 @@ models/
 reports/*.html
 .DS_Store
 EOF
+.vscode/

@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score
 
-from custom_pipeline import build_custom_pipeline
+from src.custom_pipeline import build_custom_pipeline
 
 DATA_PATH = Path("data") / "raw" / "train_titanic.csv"
 PARAMS_PATH = Path("artifacts") / "model_data" / "best_params.json"
@@ -19,7 +19,6 @@ def load_best_params(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         params = json.load(f)
 
-    # иногда json хранит числа как строки — приводим минимум
     int_keys = {"max_depth", "n_estimators", "min_child_weight"}
     float_keys = {"learning_rate", "subsample", "colsample_bytree", "gamma", "reg_alpha", "reg_lambda"}
 
@@ -35,7 +34,6 @@ def load_best_params(path: Path) -> dict:
 def make_raw_X(df: pd.DataFrame) -> pd.DataFrame:
     X = df[["Sex", "Age", "Fare", "Pclass", "SibSp", "Parch", "Cabin"]].copy()
 
-    # Title берём из колонки Title если она есть, иначе один раз извлекаем из Name
     if "Title" in df.columns:
         X["Title"] = df["Title"]
     else:

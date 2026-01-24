@@ -73,7 +73,6 @@ def build_custom_pipeline(best_params: dict, random_state: int = 42) -> Pipeline
         remainder="drop"
     )
 
-    # базовые обязательные штуки + best_params поверх
     model = XGBClassifier(
         random_state=random_state,
         eval_metric="logloss",

@@ -1,0 +1,11 @@
+-r requirements.txt
+
+jupyter
+ipykernel
+matplotlib
+seaborn
+
+optuna
+
+ruff
+black

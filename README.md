@@ -1,20 +1,28 @@
-
 # 🚢 Titanic Survival Prediction — End-to-End ML + Streamlit + Docker
 
-ML-проект для предсказания выживаемости пассажиров Titanic с **полным пайплайном**:  
-EDA → Feature Engineering → статистическая проверка фич → Optuna tuning (XGBoost) → **full custom pipeline (raw → processed → model)** → Streamlit app → Docker.
+An ML project that predicts Titanic passenger survival with a **full reproducible pipeline**:
+
+EDA → Feature Engineering → Statistical feature checks → Optuna tuning (XGBoost) → **custom end-to-end pipeline (raw → processed → model)** → Streamlit app → Docker.
 
 ---
-The link to see the result:
-[titanic->predict survivability](https://titanic-ml-optuna.streamlit.app/)
+
+## 🔗 Live Demo
+**Streamlit app:** https://titanic-ml-optuna.streamlit.app/
+
+---
 
 ## ✨ Highlights
-- ✅ Feature engineering с проверками (chi-square, Mann–Whitney U, Welch t-test, Cohen’s d)
-- ✅ Correlation filtering (Pearson/Spearman, Cramér’s V) для удаления дубликатов информации
-- ✅ Feature selection: greedy + L1 (Lasso) + permutation importance
-- ✅ Optuna tuning + сохранение лучших параметров и порога под F1
-- ✅ Sanity check (shuffle target → метрика ~0.5) против утечек/случайной удачи
-- ✅ Streamlit + Docker/Docker Compose для запуска приложения
+- ✅ Feature engineering + statistical validation:
+  - **Categorical:** chi-square, survival-rate comparison
+  - **Numerical:** Mann–Whitney U, Welch’s t-test, Cohen’s d
+- ✅ Correlation filtering to reduce duplicated information:
+  - Pearson / Spearman (numeric), Cramér’s V (categorical)
+- ✅ Feature selection:
+  - greedy selection + L1 (Lasso) + permutation importance
+- ✅ Optuna hyperparameter tuning + saving best params and **optimal F1 threshold**
+- ✅ Sanity check: **shuffle target → ROC-AUC ≈ 0.5** (leakage / “lucky split” check)
+- ✅ Deployment:
+  - Streamlit app + Docker + Docker Compose
 
 ---
 
@@ -23,7 +31,7 @@ The link to see the result:
 - [Repository Structure](#-repository-structure)
 - [Results](#-results)
 - [How It Works (Step-by-Step)](#-how-it-works-step-by-step)
-- [Run Locally](#-run-locally)
+- [Run Locally](#️-run-locally)
 - [Run with Docker](#-run-with-docker)
 - [Artifacts](#-artifacts)
 - [Roadmap](#-roadmap)
@@ -32,19 +40,24 @@ The link to see the result:
 ---
 
 ## 📖 Project Overview
-Цель: построить воспроизводимый ML-пайплайн, который предсказывает `Survived (0/1)` и включает полный путь:  
-данные → обработка → обучение → сохранение артефактов → предикт → UI.
+**Goal:** build an end-to-end, reproducible ML pipeline to predict `Survived (0/1)`, covering the full path:
+raw data → processing → training → artifact saving → inference → UI.
 
 **Modeling approach:**
-- Baseline для проверки фич: **Logistic Regression**
-- Финальная модель: **XGBoost** (скорость + качество)
+- Baseline for feature validation: **Logistic Regression**
+- Final model: **XGBoost** (good speed/quality trade-off)
 
 **Primary metric during feature work:** **ROC-AUC**  
 **Final comparison metrics:** Accuracy / Precision / Recall / F1
 
+**Evaluation setup:**
+- Holdout split: `train_test_split(..., stratify=y, random_state=...)`
+- Cross-validation: `StratifiedKFold` used with `cross_val_predict` to obtain out-of-fold predictions
+
+
 ---
 
-## 🗂 Repository Structure
+## 🧱 Repository Structure
 ```text
 .
 ├─ artifacts/
@@ -66,180 +79,156 @@ The link to see the result:
 ├─ docker-compose.yml
 ├─ .dockerignore
 └─ .gitignore
-````
+Data folders:
 
-**Data folders:**
+data/raw — original raw dataset
 
-* `data/raw` — исходные данные (без обработки)
-* `data/processed` — обработанные данные после feature engineering
+data/processed — processed dataset after feature engineering
 
-**Artifacts:**
+Artifacts:
 
-* `artifacts/` — всё для воспроизводимости: метаданные фич, лучшие параметры, пороги и т.п.
+artifacts/ — everything needed for reproducibility: feature metadata, best params, thresholds, etc.
 
----
+📊 Results
+> Metrics are reported using a stratified train/test split and validated with Stratified K-Fold cross-validation (via `cross_val_predict`) to preserve class distribution and reduce variance.
 
-## 📊 Results
+Pipeline Comparison
+Full custom pipeline (raw → processed → model):
 
-### Pipeline Comparison
+accuracy: 0.9057
 
-**Full custom pipeline (raw → processed → model):**
+precision: 0.8686
 
-* accuracy: **0.9057**
-* precision: **0.8686**
-* recall: **0.8889**
-* f1: **0.8786**
+recall: 0.8889
 
-**Standard pipeline (processed + standard preprocessing):**
+f1: 0.8786
 
-* accuracy: **0.8945**
-* precision: **0.8543**
-* recall: **0.8743**
-* f1: **0.8642**
+Standard pipeline (processed + standard preprocessing):
 
-**Difference (custom - standard):**
+accuracy: 0.8945
 
-* accuracy: **+0.0112**
-* precision: **+0.0143**
-* recall: **+0.0146**
-* f1: **+0.0145**
+precision: 0.8543
 
-✅ Итог: **Full custom pipeline лучше**, поэтому он сохранён как финальный.
+recall: 0.8743
 
----
+f1: 0.8642
 
-## 🧠 How It Works (Step-by-Step)
+Difference (custom − standard):
 
-### 1) EDA + Feature Engineering + Feature Selection
+accuracy: +0.0112
 
-Сначала — быстрый визуальный EDA, чтобы понять:
+precision: +0.0143
 
-* распределения числовых/категориальных фич
-* различимость между `Survived=1` и `Survived=0`
+recall: +0.0146
 
-Потом — углублённая статистическая проверка (если слабый сигнал → возвращался в feature engineering):
+f1: +0.0145
 
-**Categorical tests**
+✅ Conclusion: the full custom pipeline performs better, so it is kept as the final solution.
 
-* Chi-square
-* Survival rate comparison
+🧠 How It Works (Step-by-Step)
+1) EDA + Feature Engineering + Feature Selection
+Started with exploratory analysis to understand:
 
-**Numerical tests**
+numeric/categorical distributions
 
-* Mann–Whitney U (не требует нормальности, устойчив к outliers/skew)
-* Welch t-test (сравнение средних при разных дисперсиях)
-* Cohen’s d (размер эффекта)
+separability between Survived=1 and Survived=0
 
-Далее корреляции и удаление дубликатов:
+Then performed deeper statistical checks (weak signal → iterate back into feature engineering):
 
-* Pearson / Spearman (числовые)
-* Cramér’s V (категориальные)
+Categorical checks
 
-Финальный отбор фич делался через baseline **Logistic Regression** + **ROC-AUC**:
+Chi-square test
 
-* Greedy selection (добавлял по одной фиче, оставлял только те, что улучшают)
-* L1 regularization (Lasso)
-* Permutation importance (важные фичи сильно “роняют” метрику при перемешивании; шумовые ≈ 0 или отрицательный вклад)
+Survival rate comparison
 
-**Outputs:**
+Numerical checks
 
-* processed dataset → `data/processed/`
-* метаданные фич → `artifacts/features.json`
+Mann–Whitney U (robust to non-normality and outliers)
 
----
+Welch’s t-test (different variances)
 
-### 2) Modeling + Optuna (XGBoost)
+Cohen’s d (effect size)
 
-* протестировал несколько моделей и выбрал **XGBoost**
-* сделал sanity check: **shuffle target → ожидаемо ~0.5**
-  (если не ~0.5 — возможна утечка/переподгон/удача)
-* Optuna tuning → сохранил лучшие параметры и результаты
+Next: correlation filtering to remove redundant information:
 
----
+Pearson / Spearman for numeric features
 
-### 3) Full Custom Pipeline (raw → processed → model)
+Cramér’s V for categorical features
 
-Так как “стандартный” пайплайн работал уже на processed, я сделал **full custom pipeline**, который:
+Final selection combined a Logistic Regression baseline + ROC-AUC:
 
-1. принимает raw
-2. превращает в processed внутри пайплайна
-3. обучает модель на best params
+Greedy selection (add features one by one and keep only those improving the score)
 
-Файлы:
+L1 regularization (Lasso)
 
-* `src/custom_pipeline.py` — сборка пайплайна
-* `src/train_custom.py` — обучение full pipeline
-* `notebooks/03_check_pipelines_performance.ipynb` — сравнение пайплайнов
+Permutation importance (important features reduce the metric when permuted; noisy features ≈ 0 or negative)
 
----
+Outputs:
 
-## ▶️ Run Locally
+processed dataset → data/processed/
 
-### Install dependencies
+feature metadata → artifacts/features.json
 
-```bash
+2) Modeling + Optuna (XGBoost)
+tested multiple models and selected XGBoost
+
+ran a sanity check: shuffle target → expected ROC-AUC ≈ 0.5
+
+if it stays high, it may indicate leakage/bug/overfitting
+
+Optuna tuning → saved best parameters and tuning results
+
+3) Full Custom Pipeline (raw → processed → model)
+The “standard” approach trained only on the already processed dataset.
+This project also includes a full custom pipeline that:
+
+takes raw input
+
+performs feature engineering inside the pipeline
+
+trains the model using the best Optuna parameters
+
+Files:
+
+src/custom_pipeline.py — pipeline assembly
+
+src/train_custom.py — training the full pipeline
+
+notebooks/03_check_pipelines_performance.ipynb — pipeline comparison
+
+▶️ Run Locally
+Install dependencies
 pip install -r requirements.txt
 # dev dependencies (optional)
 pip install -r requirements-dev.txt
-```
-
-### Run Streamlit
-
-```bash
+Run Streamlit
 streamlit run app.py
-```
-
----
-
-## 🐳 Run with Docker
-
-### Build
-
-```bash
+🐳 Run with Docker
+Build
 docker build -t titanic-streamlit .
-```
-
-### Run
-
-```bash
+Run
 docker run --rm -p 8501:8501 titanic-streamlit
-```
-
-### Or with Docker Compose
-
-```bash
+Or with Docker Compose
 docker compose up --build
-```
-
 Open:
 
-* [http://localhost:8501](http://localhost:8501)
+http://localhost:8501
 
----
+📦 Artifacts
+Stored in artifacts/model_data/:
 
-## 📦 Artifacts
+best_params.json — best Optuna hyperparameters
 
-Файлы в `artifacts/model_data/`:
+best_score.json — best objective score (e.g., best_roc_auc_value)
 
-* `best_params.json` — лучшие гиперпараметры Optuna
-* `best_score.json` — лучший objective score Optuna (`best_roc_auc_value`)
-* `threshold.json` — `threshold_f1` (порог, который максимизирует F1; не просто 0.5)
+threshold.json — threshold_f1 (threshold that maximizes F1; not fixed at 0.5)
 
-Также:
+Also:
 
-* `artifacts/features.json` — финальные метаданные/набор фич
+artifacts/features.json — final selected features + metadata
 
----
+🛣 Roadmap
+✅ Add Streamlit demo link — done
 
-## 🛣 Roadmap
-
-> добавить демо ссылку Streamlit: **[TODO]** ```[done]```
-
----
-
-## 📄 License
-
-MIT — see `LICENSE`
-
-```
-```
+📄 License
+MIT — see LICENSE
